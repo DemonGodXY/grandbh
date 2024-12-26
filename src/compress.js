@@ -1,27 +1,29 @@
-const sharp = require('sharp')
-const redirect = require('./redirect')
+const Jimp = require('jimp');
+const redirect = require('./redirect');
 
-function compress(req, res, input) {
-  const format = req.params.webp ? 'webp' : 'jpeg'
+async function compress(req, res, input) {
+  try {
+    const image = await Jimp.read(input);
 
-  sharp(input)
-    .grayscale(req.params.grayscale)
-    .toFormat(format, {
-      quality: req.params.quality,
-      progressive: true,
-      optimizeScans: true
-    })
-    .toBuffer((err, output, info) => {
-      if (err || !info || res.headersSent) return redirect(req, res)
+    if (req.params.grayscale) {
+      image.grayscale();
+    }
 
-      res.setHeader('content-type', `image/${format}`)
-      res.setHeader('content-length', info.size)
-      res.setHeader('x-original-size', req.params.originSize)
-      res.setHeader('x-bytes-saved', req.params.originSize - info.size)
-      res.status(200)
-      res.write(output)
-      res.end()
-    })
+    const quality = req.params.quality || 10;
+    const output = await image.quality(quality).getBufferAsync(Jimp.MIME_JPEG);
+
+    if (res.headersSent) {
+      return redirect(req, res);
+    }
+
+    res.setHeader('content-type', 'image/jpeg');
+    res.setHeader('content-length', output.length);
+    res.setHeader('x-original-size', req.params.originSize);
+    res.setHeader('x-bytes-saved', req.params.originSize - output.length);
+    res.status(200).end(output);
+  } catch (err) {
+    redirect(req, res);
+  }
 }
 
-module.exports = compress
+module.exports = compress;
