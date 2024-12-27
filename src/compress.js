@@ -9,8 +9,7 @@ async function compress(req, res, input) {
       image.grayscale();
     }
 
-    const quality = req.params.quality || 10;
-    const output = await image.quality(quality).getBufferAsync(Jimp.MIME_JPEG);
+    const output = await image.quality(10).getBufferAsync(Jimp.MIME_JPEG);
 
     if (res.headersSent) {
       return redirect(req, res);
