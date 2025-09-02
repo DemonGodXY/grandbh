@@ -7,11 +7,7 @@ const params = require("./params"); // import our params middleware
 const app = express();
 const PORT = 3000;
 
-// 🛑 Handle favicon cleanly
-app.get("/favicon.ico", (req, res) => res.status(204).end());
 
-// ⚙️ Apply params middleware globally
-app.use(params);
 
 // 🎨 Image transform proxy at root
 // Example:
@@ -61,7 +57,8 @@ app.get("/", async (req, res) => {
     res.status(500).send("Server error: " + err.message);
   }
 });
-
+// 🛑 Handle favicon cleanly
+app.get("/favicon.ico", (req, res) => res.status(204).end());
 // 🚀 Start server
 app.listen(PORT, () => {
   console.log(`Image transformer running at http://localhost:${PORT}`);
