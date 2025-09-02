@@ -10,7 +10,7 @@ const app = express();
 app.get("/favicon.ico", (req, res) => res.status(204).end());
 
 // Apply query->params middleware
-app.use(params);
+
 
 // Root route
 app.get("/", async (req, res) => {
