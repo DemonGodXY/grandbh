@@ -27,16 +27,10 @@ app.get("/", async (req, res) => {
 
     const response = await axios.get(url, {
       headers: incomingHeaders,
-      responseType: "stream",
-      validateStatus: () => true
+      responseType: "stream"
     });
 
-    if (response.status !== 200) {
-      res
-        .status(response.status)
-        .send("Fetch failed: " + response.statusText);
-      return;
-    }
+    
 
     let transformer = sharp();
 
