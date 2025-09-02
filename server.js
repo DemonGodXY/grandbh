@@ -6,7 +6,7 @@ import sharp from "sharp";
 const app = express();
 const PORT = 3000;
 
-// Example usage:
+// Example with usage:
 //   http://localhost:3000/image?url=https://example.com/pic.jpg&width=400&quality=80
 app.get("/image", async (req, res) => {
   try {
