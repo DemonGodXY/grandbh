@@ -10,6 +10,8 @@ const DEFAULT_QUALITY = 80;
 // 🛑 Silence favicon requests
 app.get("/favicon.ico", (req, res) => res.status(204).end());
 
+// 🎨 Root handler: transform without resizing
+app.get("/", async (req, res) => {
   let url = req.query.url;
   if (Array.isArray(url)) url = url.join("&url=");
   if (!url) return res.end("bandwidth-hero-proxy");
@@ -18,9 +20,6 @@ app.get("/favicon.ico", (req, res) => res.status(204).end());
   req.params.webp = !req.query.jpeg; // default to webp unless ?jpeg=1
   req.params.grayscale = req.query.bw != 0;
   req.params.quality = parseInt(req.query.l, 10) || DEFAULT_QUALITY;
-
-// 🎨 Root handler: transform without resizing
-app.get("/", async (req, res) => {
   try {
     const { url, quality, webp, grayscale } = req.params;
 
