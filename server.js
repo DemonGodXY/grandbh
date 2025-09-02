@@ -43,11 +43,9 @@ app.get("/", async (req, res) => {
 
     // Set output format: WebP or JPEG
     if (webp) {
-      transformer = transformer.toFormat("webp", { quality });
-      res.type("image/webp");
+      transformer = transformer.toFormat("webp", { quality:req.params.quality });
     } else {
-      transformer = transformer.toFormat("jpeg", { quality });
-      res.type("image/jpeg");
+      transformer = transformer.toFormat("jpeg", { quality:req.params.quality });
     }
 
     // Pipe: Axios stream → Sharp → HTTP response
