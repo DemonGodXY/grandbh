@@ -10,10 +10,6 @@ const DEFAULT_QUALITY = 80;
 // 🛑 Silence favicon requests
 app.get("/favicon.ico", (req, res) => res.status(204).end());
 
-// Middleware: normalize query parameters
-app.use((req, res, next) => {
-  if (req.path !== "/") return next(); // only care about root
-
   let url = req.query.url;
   if (Array.isArray(url)) url = url.join("&url=");
   if (!url) return res.end("bandwidth-hero-proxy");
