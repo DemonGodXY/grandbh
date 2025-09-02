@@ -42,13 +42,13 @@ app.get("/", async (req, res) => {
     let transformer = sharp();
 
     // Optional resizing
-    if (width || height) {
+    /*if (width || height) {
       transformer = transformer.resize(
         width ? parseInt(width) : null,
         height ? parseInt(height) : null,
         { fit: "inside", withoutEnlargement: true }
       );
-    }
+    }*/
 
     // Always convert to WebP (default quality 80)
     const qualityValue = quality
@@ -57,7 +57,7 @@ app.get("/", async (req, res) => {
 
     transformer = transformer.toFormat("webp", { quality: qualityValue });
 
-    res.type("image/webp");
+    //res.type("image/webp");
 
     // Pipe: Axios → Sharp → client
     response.data.pipe(transformer).pipe(res);
