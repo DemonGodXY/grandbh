@@ -16,7 +16,7 @@ app.get("/", async (req, res) => {
   try {
     const { url, width, height, quality } = req.query;
     if (!url) {
-      res.status(400).send("Missing required ?url parameter");
+      res.send("Missing required ?url parameter");
       return;
     }
 
