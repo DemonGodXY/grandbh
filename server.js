@@ -2,46 +2,6 @@
 const express = require("express");
 const axios = require("axios");
 const sharp = require("sharp");
-
-const app = express();
-const PORT = 3000;
-
-// 🛑 Silence favicon requests — return 204
-app.get("/favicon.ico", (req, res) => res.status(204).end());
-
-// 🎨 Image transform proxy at root
-// Example:
-//   http://localhost:3000/?url=https://example.com/cat.jpg&width=400&quality=70
-app.get("/", async (req, res) => {
-  try {
-    const { url, width, height, quality } = req.query;
-    if (!url) {
-      res.send("Missing required ?url parameter");
-      return;
-    }
-
-    // Forward original request headers except host
-    const incomingHeaders = { ...req.headers };
-    delete incomingHeaders.host;
-
-    // Fetch origin image as stream
-    const response = await axios.get(url, {
-      headers: incomingHeaders,
-      responseType: "stream",
-      validateStatus: () => true
-    });
-
-    if (response.status !== 200) {
-      res
-        .status(response.status)
-        .send(`Failed fetching image: ${response.statusText}`);
-      return;
-    }
-
-// server.js
-const express = require("express");
-const axios = require("axios");
-const sharp = require("sharp");
 const params = require("./params"); // import our params middleware
 
 const app = express();
