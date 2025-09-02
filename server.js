@@ -4,7 +4,7 @@ const axios = require("axios");
 const sharp = require("sharp");
 
 const app = express();
-const PORT = 3000;
+const PORT = 8080;
 const DEFAULT_QUALITY = 80;
 
 // 🛑 Silence favicon requests
