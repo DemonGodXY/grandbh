@@ -5,10 +5,6 @@ const sharp = require("sharp");
 
 const app = express();
 const PORT = 3000;
-
-// 🛑 Shortcut: Quietly handle favicon requests with 204 (no content)
-app.get("/favicon.ico", (req, res) => res.status(204).end());
-
 // 🎨 Image transform endpoint
 // Example:
 //   http://localhost:3000/image?url=https://example.com/cat.jpg&width=400&quality=70
@@ -107,6 +103,9 @@ app.get("/", async (req, res) => {
     res.status(500).send("Server error: " + err.message);
   }
 });
+    
+// 🛑 Shortcut: Quietly handle favicon requests with 204 (no content)
+app.get("/favicon.ico", (req, res) => res.status(204).end());
 
 // 🚀 Start
 app.listen(PORT, () => {
