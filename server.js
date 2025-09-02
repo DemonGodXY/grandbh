@@ -81,13 +81,51 @@ app.get("/image", async (req, res) => {
     });
 
     if (response.status !== 200) {
-      res.status(response.status).send(`Failed fetching image: ${response.statusText}`);
+// server.js
+import express from "express";
+import axios from "axios";
+import sharp from "sharp";
+
+const app = express();
+const PORT = 3000;
+
+// 🛑 Handle favicon probes with no content
+// (prevents noisy 404s from browsers)
+app.get("/favicon.ico", (req, res) => res.status(204).end());
+
+// 🎨 Image transform endpoint
+// Example:
+//   http://localhost:3000/image?url=https://example.com/image.jpg&width=400&quality=80
+app.get("/image", async (req, res) => {
+  try {
+    const { url, width, height, quality } = req.query;
+    if (!url) {
+      res.status(400).send("Missing required ?url parameter");
       return;
     }
 
-    // Start Sharp pipeline
+    // Clone headers but drop "host"
+    const incomingHeaders = { ...req.headers };
+    delete incomingHeaders.host;
+
+    // Fetch original image as a stream
+    const response = await axios.get(url, {
+      headers: incomingHeaders,
+      responseType: "stream",
+      validateStatus: () => true // prevents throwing on non-200
+    });
+
+    if (response.status !== 200) {
+      res
+        .status(response.status)
+        .send(`Failed fetching image: ${response.statusText}`);
+      return;
+    }
+
+    // Create Sharp pipeline
     let transformer = sharp();
 
+    // Optional resize
     if (width || height) {
       transformer = transformer.resize(
         width ? parseInt(width) : null,
@@ -96,15 +134,17 @@ app.get("/image", async (req, res) => {
       );
     }
 
-    // WebP with configurable quality (default 80)
-    const qualityValue = quality ? Math.max(1, Math.min(parseInt(quality), 100)) : 80;
+    // WebP conversion with adjustable quality (default 80)
+    const qualityValue = quality
+      ? Math.max(1, Math.min(parseInt(quality), 100))
+      : 80;
     transformer = transformer.toFormat("webp", { quality: qualityValue });
 
+    // Set Content-Type
     res.type("image/webp");
 
-    // Axios stream → Sharp → response
+    // Pipe: Axios stream → Sharp → response
     response.data.pipe(transformer).pipe(res);
-
   } catch (err) {
     console.error("Image transform error:", err.message);
     res.status(500).send("Server error: " + err.message);
