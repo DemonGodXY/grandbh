@@ -6,11 +6,11 @@ import sharp from "sharp";
 const app = express();
 const PORT = 3000;
 
-// Example:
-//   http://localhost:3000/image?url=https://example.com/pic.jpg&width=400&height=300
+// Example usage:
+//   http://localhost:3000/image?url=https://example.com/pic.jpg&width=400&quality=80
 app.get("/image", async (req, res) => {
   try {
-    const { url, width, height } = req.query;
+    const { url, width, height, quality } = req.query;
     if (!url) {
       res.status(400).send("Missing required ?url parameter");
       return;
@@ -24,7 +24,7 @@ app.get("/image", async (req, res) => {
     const response = await axios.get(url, {
       headers: incomingHeaders,
       responseType: "stream",
-      validateStatus: () => true, // don't throw on non-200
+      validateStatus: () => true
     });
 
     if (response.status !== 200) {
@@ -32,9 +32,10 @@ app.get("/image", async (req, res) => {
       return;
     }
 
-    // Always convert to WebP
+    // Always convert to WebP with optional quality setting
     let transformer = sharp();
 
+    // Apply resizing if needed
     if (width || height) {
       transformer = transformer.resize(
         width ? parseInt(width) : null,
@@ -43,11 +44,14 @@ app.get("/image", async (req, res) => {
       );
     }
 
-    transformer = transformer.toFormat("webp");
+    // Use quality param if provided, else default to 80
+    const qualityValue = quality ? Math.max(1, Math.min(parseInt(quality), 100)) : 80;
+    transformer = transformer.toFormat("webp", { quality: qualityValue });
 
+    // Content-Type: WebP
     res.type("image/webp");
 
-    // Stream: Axios → Sharp → client response
+    // Stream pipeline: Axios → Sharp → Client
     response.data.pipe(transformer).pipe(res);
 
   } catch (err) {
