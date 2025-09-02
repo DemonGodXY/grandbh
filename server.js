@@ -5,30 +5,48 @@ const sharp = require("sharp");
 
 const app = express();
 const PORT = 3000;
+const DEFAULT_QUALITY = 80;
 
-// 🛑 Silence favicon requests — return 204
+// 🛑 Silence favicon requests
 app.get("/favicon.ico", (req, res) => res.status(204).end());
 
-// 🎨 Image transform proxy at root
-// Example:
-//   http://localhost:3000/?url=https://example.com/cat.jpg&width=400&quality=70
+// Middleware: normalize query parameters
+app.use((req, res, next) => {
+  if (req.path !== "/") return next(); // only care about root
+
+  let url = req.query.url;
+  if (Array.isArray(url)) url = url.join("&url=");
+  if (!url) return res.end("bandwidth-hero-proxy");
+
+  // strip weird compression-proxy prefixes if found
+  url = url.replace(/http:\/\/1\.1\.\d\.\d\/bmi\/(https?:\/\/)?/i, "http://");
+
+  req.params.url = url;
+  req.params.webp = !req.query.jpeg; // default to webp unless ?jpeg=1
+  req.params.grayscale = req.query.bw != 0;
+
+  // clamp quality between 1-100
+  const q = parseInt(req.query.l, 10);
+  req.params.quality =
+    Number.isInteger(q) && q >= 1 && q <= 100 ? q : DEFAULT_QUALITY;
+
+  next();
+});
+
+// 🎨 Root handler: transform without resizing
 app.get("/", async (req, res) => {
   try {
-    const { url, width, height, quality } = req.query;
-    if (!url) {
-      res.status(400).send("Missing required ?url parameter");
-      return;
-    }
+    const { url, quality, webp, grayscale } = req.params;
 
-    // Forward original request headers except host
-    const incomingHeaders = { ...req.headers };
-    delete incomingHeaders.host;
+    // forward headers (but drop host to avoid issues)
+    const headers = { ...req.headers };
+    delete headers.host;
 
-    // Fetch origin image as stream
+    // fetch original as a stream
     const response = await axios.get(url, {
-      headers: incomingHeaders,
+      headers,
       responseType: "stream",
-      validateStatus: () => true
+      validateStatus: () => true,
     });
 
     if (response.status !== 200) {
@@ -38,36 +56,33 @@ app.get("/", async (req, res) => {
       return;
     }
 
-    // Sharp transformation pipeline
     let transformer = sharp();
 
-    // Optional resizing
-    if (width || height) {
-      transformer = transformer.resize(
-        width ? parseInt(width) : null,
-        height ? parseInt(height) : null,
-        { fit: "inside", withoutEnlargement: true }
-      );
+    if (grayscale) {
+      transformer = transformer.grayscale();
     }
 
-    // Always convert to WebP (default quality 80)
-    const qualityValue = quality
-      ? Math.max(1, Math.min(parseInt(quality), 100))
-      : 80;
+    const format = webp ? "webp" : "jpeg";
+    transformer = transformer.toFormat(format, { quality });
 
-    transformer = transformer.toFormat("webp", { quality: qualityValue });
+    res.type(`image/${format}`);
 
-    res.type("image/webp");
-
-    // Pipe: Axios → Sharp → client
+    // pipe stream: axios → sharp → client
     response.data.pipe(transformer).pipe(res);
+
+    transformer.on("error", (err) => {
+      console.error("Sharp error:", err.message);
+      if (!res.headersSent) {
+        res.status(422).send("Image processing failed");
+      }
+    });
   } catch (err) {
     console.error("Image transform error:", err.message);
     res.status(500).send("Server error: " + err.message);
   }
 });
 
-// 🚀 Start
+// 🚀 Start server
 app.listen(PORT, () => {
   console.log(`Image transformer running at http://localhost:${PORT}`);
 });
